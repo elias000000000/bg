@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Budget Planer</title>
+
+  <!-- Nunito Schrift -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <nav class="nav" role="navigation" aria-label="Hauptnavigation">
+    <div class="brand">Budget Planer</div>
+    <div class="nav-items" role="tablist" aria-label="Navigation">
+      <button class="nav-btn active" data-tab="budget" role="tab" aria-selected="true">Budget</button>
+      <button class="nav-btn" data-tab="list" role="tab" aria-selected="false">Auflistung</button>
+      <button class="nav-btn" data-tab="history" role="tab" aria-selected="false">Verlauf</button>
+      <button class="nav-btn" data-tab="saved" role="tab" aria-selected="false">Gespart</button>
+      <button class="nav-btn" data-tab="settings" role="tab" aria-selected="false">Einstellungen</button>
+    </div>
+  </nav>
+
+  <main class="main">
+    <!-- Header / Greeting -->
+    <div class="panel header-panel">
+      <div id="greeting" class="muted">Hallo –</div>
+      <h2 id="monthRange">
+        <span id="budgetWord">Budget</span> <span id="monthLabel">für –</span>
+      </h2>
+      <div id="quoteRow" class="muted">
+        <span id="quoteMarks" class="quote-marks">“</span>
+        <span id="dailyQuote" class="quote-text">Spar heute, lach morgen.</span>
+        <span id="quoteMarksEnd" class="quote-marks">”</span>
+      </div>
+      <div id="currentDate" class="muted">–</div>
+    </div>
+
+    <!-- TAB: Budget -->
+    <section id="tab-budget" class="tab active" role="tabpanel">
+      <div class="panel">
+        <label for="totalBudget" class="muted">Gesamtbudget (CHF)</label>
+        <div class="input-row" style="margin-top:8px">
+          <input id="totalBudget" type="number" inputmode="decimal" placeholder="z.B. 1500.00" />
+          <button id="saveBudget" class="btn btn-primary">Speichern</button>
+        </div>
+
+        <div class="summary" style="margin-top:12px">
+          <div class="card">
+            <div class="muted">Verfügbar</div>
+            <div id="remaining" class="big">—</div>
+          </div>
+          <div class="card">
+            <div class="muted">Bereits ausgegeben</div>
+            <div id="spent" class="big">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="input-row" style="gap:8px; align-items:center;">
+          <input id="txDesc" type="text" placeholder="Beschreibung (z.B. Kaffee)" style="flex:2" />
+          <input id="txAmount" type="number" inputmode="decimal" placeholder="Betrag" style="flex:1; min-width:110px" />
+          <select id="txCategory" style="min-width:120px"></select>
+          <button id="addTx" class="btn btn-primary">Hinzufügen</button>
+        </div>
+      </div>
+
+      <div id="chartsPanel" class="panel">
+        <h3>Ausgaben nach Kategorien</h3>
+        <div style="height:220px"><canvas id="categoryChart" aria-label="Kategorien Diagramm"></canvas></div>
+        <h3 style="margin-top:12px">Prozentuale Ausgaben</h3>
+        <div style="height:180px"><canvas id="percentageChart" aria-label="Prozentdiagramm"></canvas></div>
+      </div>
+    </section>
+
+    <!-- TAB: Auflistung -->
+    <section id="tab-list" class="tab" role="tabpanel" style="display:none">
+      <div class="panel">
+        <h3>Alle Transaktionen</h3>
+        <div class="input-row" style="margin-top:8px">
+          <input id="searchHistory" type="text" placeholder="Suchen..." style="flex:1"/>
+          <select id="filterCategory" style="min-width:150px"><option value="">Alle Kategorien</option></select>
+        </div>
+        <div id="allList" class="history-list" style="margin-top:12px"></div>
+      </div>
+    </section>
+
+    <!-- TAB: Verlauf -->
+    <section id="tab-history" class="tab" role="tabpanel" style="display:none">
+      <div id="historyPanel" class="panel">
+        <h3>Verlauf</h3>
+        <div id="historyList" class="history-list" style="margin-top:8px"></div>
+
+        <div style="display:flex; gap:8px; margin-top:12px">
+          <button id="exportCSV" class="btn btn-primary">Verlauf (CSV)</button>
+          <button id="exportWord" class="btn btn-primary">Verlauf (Word)</button>
+          <button id="exportChart" class="btn btn-primary">Diagramm (PNG)</button>
+          <button id="resetHistory" class="btn btn-danger" style="margin-left:auto">Verlauf löschen</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: Gespart -->
+    <section id="tab-saved" class="tab" role="tabpanel" style="display:none">
+      <div class="panel">
+        <h3>Gespart (Monatlich)</h3>
+        <div id="savedList" class="history-list"></div>
+      </div>
+    </section>
+
+    <!-- TAB: Einstellungen -->
+    <section id="tab-settings" class="tab" role="tabpanel" style="display:none">
+      <div class="panel">
+        <h3>Name festlegen</h3>
+        <div class="input-row" style="margin-top:8px">
+          <input id="userName" type="text" placeholder="Dein Name" style="flex:1" />
+          <button id="saveName" class="btn btn-primary">Speichern</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Farbschema wählen</h3>
+        <div class="theme-grid" style="margin-top:8px">
+          <button class="theme-btn" data-theme-select="standard">Standard</button>
+          <button class="theme-btn" data-theme-select="warm">Warm</button>
+          <button class="theme-btn" data-theme-select="kalt">Kalt</button>
+          <button class="theme-btn" data-theme-select="fancy">Fancy</button>
+          <button class="theme-btn" data-theme-select="special">Special</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Downloads</h3>
+        <div style="display:flex; gap:8px; margin-top:8px">
+          <button id="settingsExportCSV" class="btn btn-primary">Verlauf (CSV)</button>
+          <button id="settingsExportWord" class="btn btn-primary">Verlauf (Word)</button>
+          <button id="settingsExportChart" class="btn btn-primary">Diagramm (PNG)</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Willkommen Modal -->
+  <div id="welcomeModal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+      <h2>Willkommen 👋</h2>
+      <p>Wie dürfen wir dich nennen?</p>
+      <input id="welcomeName" type="text" placeholder="Dein Name" />
+      <div style="margin-top:12px">
+        <button id="welcomeSave" class="btn btn-primary">Los geht's</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info Modal (Ich-Perspektive) -->
+  <div id="infoModal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+      <h3>Ich helfe dir.</h3>
+      <p>Ich begleite dich beim Planen deines Monatsbudgets — Schritt für Schritt.</p>
+      <div style="margin-top:12px">
+        <button id="infoNext" class="btn btn-primary">Weiter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payday Modal -->
+  <div id="paydayModal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+      <h3>Wann ist dein Zahltag?</h3>
+      <p>Gib den Tag im Monat an (1–28). Wir nutzen ihn, um Monatsperioden zu berechnen.</p>
+      <input id="paydayInput" type="number" min="1" max="28" placeholder="z.B. 1" />
+      <div style="margin-top:12px">
+        <button id="savePayday" class="btn btn-primary">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
