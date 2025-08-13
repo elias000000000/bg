@@ -1,28 +1,27 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Budget Planer</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.0.1/docx.min.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
-  <nav class="nav">
-    <div class="brand">Budget Planer</div>
-    <div class="nav-items">
-      <button class="nav-btn active" data-tab="budget">Budget</button>
-      <button class="nav-btn" data-tab="list">Auflistung</button>
-      <button class="nav-btn" data-tab="history">Verlauf</button>
-      <button class="nav-btn" data-tab="saved">Gespart</button>
-      <button class="nav-btn" data-tab="categories">Kategorien</button>
-      <button class="nav-btn" data-tab="settings">Einstellungen</button>
-    </div>
+  <nav class="bottom-nav">
+    <button class="bottom-nav-btn active" data-tab="budget">💰 Budget</button>
+    <button class="bottom-nav-btn" data-tab="list">📜 Auflistung</button>
+    <button class="bottom-nav-btn" data-tab="history">📅 Verlauf</button>
+    <button class="bottom-nav-btn" data-tab="saved">💎 Gespart</button>
+    <button class="bottom-nav-btn" data-tab="categories">📂 Kategorien</button>
+    <button class="bottom-nav-btn" data-tab="settings">⚙️ Einstellungen</button>
+    <button class="bottom-nav-btn" data-tab="archive">📦 Archiv</button>
   </nav>
 
-  <main class="main">
+  <main class="main-content">
     <div class="panel header-panel">
       <div id="greeting" class="muted">Hallo –</div>
       <h2 id="monthRange">
@@ -32,89 +31,55 @@
       <div id="quote" class="quote"></div>
     </div>
 
-    <!-- Budget -->
     <section id="tab-budget" class="tab active">
       <div class="panel">
         <label for="totalBudget" class="muted">Gesamtbudget (CHF)</label>
-        <div class="input-row" style="margin-top:8px">
-          <input id="totalBudget" type="number" placeholder="z.B. 1500.00" />
+        <div class="input-row">
+          <input id="totalBudget" type="number" min="0" step="0.01">
           <button id="saveBudget" class="btn btn-primary">Speichern</button>
         </div>
-        <div class="summary" style="margin-top:12px">
-          <div class="card"><div class="muted">Verfügbar</div><div id="remaining" class="big">CHF 0.00</div></div>
-          <div class="card"><div class="muted">Bereits ausgegeben</div><div id="spent" class="big">CHF 0.00</div></div>
-        </div>
       </div>
+
       <div class="panel">
-        <div class="input-row">
-          <input id="txDesc" type="text" placeholder="Beschreibung" />
-          <input id="txAmount" type="number" placeholder="Betrag" />
-          <select id="txCategory"></select>
-          <button id="addTx" class="btn btn-primary">Hinzufügen</button>
-        </div>
+        <label for="txCategory" class="muted">Kategorie</label>
+        <select id="txCategory"></select>
+        <label for="txDesc" class="muted">Beschreibung</label>
+        <input id="txDesc" type="text">
+        <label for="txAmount" class="muted">Betrag (CHF)</label>
+        <input id="txAmount" type="number" step="0.01">
+        <button id="addTx" class="btn btn-primary">Hinzufügen</button>
       </div>
-      <div id="chartsPanel" class="panel">
-        <h3>Ausgaben nach Kategorien</h3>
-        <div style="height:220px"><canvas id="categoryChart"></canvas></div>
-        <h3 style="margin-top:12px">Prozentuale Ausgaben</h3>
-        <div style="height:180px"><canvas id="percentageChart"></canvas></div>
+
+      <div class="panel">
+        <div>Ausgegeben: <span id="spent">CHF 0.00</span></div>
+        <div>Verbleibend: <span id="remaining" class="big">CHF 0.00</span></div>
       </div>
     </section>
 
-    <!-- Auflistung -->
-    <section id="tab-list" class="tab" style="display:none">
+    <section id="tab-list" class="tab">
+      <div class="panel" id="transactionList"></div>
+    </section>
+
+    <section id="tab-history" class="tab">
+      <canvas id="expenseChart" width="100%" height="300"></canvas>
+      <div class="panel" id="historyList"></div>
+    </section>
+
+    <section id="tab-saved" class="tab">
       <div class="panel">
-        <h3>Alle Transaktionen</h3>
-        <div class="input-row">
-          <input id="searchHistory" type="text" placeholder="Suchen..." />
-          <select id="filterCategory"><option value="">Alle Kategorien</option></select>
-        </div>
-        <div id="allList" class="history-list"></div>
+        <div>Gespart diesen Monat: <span id="savedAmount">CHF 0.00</span></div>
       </div>
     </section>
 
-    <!-- Verlauf -->
-    <section id="tab-history" class="tab" style="display:none">
+    <section id="tab-categories" class="tab">
       <div class="panel">
-        <h3>Verlauf</h3>
-        <div id="historyList" class="history-list"></div>
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button id="exportWord" class="btn btn-primary">Verlauf als Word exportieren</button>
-          <button id="exportChart" class="btn btn-primary">Diagramm als Bild herunterladen</button>
-          <button id="resetHistory" class="btn btn-danger" style="margin-left:auto">Verlauf löschen</button>
-        </div>
+        <input id="newCategoryName" type="text" placeholder="Neue Kategorie">
+        <button id="addCategory" class="btn btn-primary">Hinzufügen</button>
       </div>
+      <div id="categoriesList"></div>
     </section>
 
-    <!-- Gespart -->
-    <section id="tab-saved" class="tab" style="display:none">
-      <div class="panel">
-        <h3>Gespart</h3>
-        <div id="savedAmount" class="big">CHF 0.00</div>
-      </div>
-    </section>
-
-    <!-- Kategorien -->
-    <section id="tab-categories" class="tab" style="display:none">
-      <div class="panel">
-        <h3>Kategorien verwalten</h3>
-        <div class="input-row" style="margin-top:8px">
-          <input id="newCategoryName" type="text" placeholder="Neue Kategorie" style="flex:1" />
-          <button id="addCategory" class="btn btn-primary">Hinzufügen</button>
-        </div>
-        <div id="categoriesList" class="history-list" style="margin-top:12px"></div>
-      </div>
-    </section>
-
-    <!-- Einstellungen -->
-    <section id="tab-settings" class="tab" style="display:none">
-      <div class="panel">
-        <h3>Name festlegen</h3>
-        <div class="input-row">
-          <input id="userName" type="text" placeholder="Dein Name" />
-          <button id="saveName" class="btn btn-primary">Speichern</button>
-        </div>
-      </div>
+    <section id="tab-settings" class="tab">
       <div class="panel">
         <h3>Farbschema wählen</h3>
         <div class="theme-grid">
@@ -126,31 +91,46 @@
           <button class="theme-btn" data-theme-select="girly">Girly</button>
         </div>
       </div>
+      <div class="panel">
+        <h3>Exportieren</h3>
+        <button id="exportWord" class="btn btn-primary">Verlauf als Word</button>
+        <button id="exportChart" class="btn btn-primary">Diagramm als PNG</button>
+      </div>
+    </section>
+
+    <section id="tab-archive" class="tab">
+      <div class="panel" id="archiveList"></div>
     </section>
   </main>
 
-  <!-- Willkommen Modal -->
+  <!-- Popups -->
   <div id="welcomeModal" class="modal" aria-hidden="true">
     <div class="modal-content">
-      <h2>Willkommen 👋</h2>
-      <p>Wie dürfen wir dich nennen?</p>
-      <input id="welcomeName" type="text" placeholder="Dein Name" />
-      <p>Wann ist dein Zahltag?</p>
-      <input id="paydayInput" type="number" placeholder="Tag im Monat" min="1" max="31" />
-      <div style="margin-top:12px">
-        <button id="welcomeSave" class="btn btn-primary">Los geht's</button>
-      </div>
+      <p>Willkommen! Wie heisst du?</p>
+      <input id="userName" type="text">
+      <button id="saveName" class="btn btn-primary">Speichern</button>
     </div>
   </div>
 
-  <!-- Info Modal -->
   <div id="infoModal" class="modal" aria-hidden="true">
     <div class="modal-content">
-      <h2>Willkommen an Bord</h2>
-      <p>Ich werde dir helfen, dein Budget im Blick zu behalten und mehr zu sparen!</p>
-      <div style="margin-top:12px">
-        <button id="infoClose" class="btn btn-primary">Alles klar</button>
-      </div>
+      <p>Ich helfe dir, dein Budget im Überblick zu behalten.</p>
+      <button id="closeInfo" class="btn btn-primary">Weiter</button>
+    </div>
+  </div>
+
+  <div id="categoryInfoModal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+      <p>Bitte lege deine eigenen Kategorien fest, bevor du startest.</p>
+      <button id="closeCategoryInfo" class="btn btn-primary">Weiter</button>
+    </div>
+  </div>
+
+  <div id="paydayModal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+      <p>Wähle deinen Zahltag (1–28)</p>
+      <input id="paydaySelect" type="number" min="1" max="28">
+      <button id="savePayday" class="btn btn-primary">Speichern</button>
     </div>
   </div>
 </body>
